@@ -1,6 +1,9 @@
 package base58
 
-import "fmt"
+import (
+	"fmt"
+	"unsafe"
+)
 
 var (
 	alphabetEncode = [58]byte{
@@ -29,6 +32,10 @@ var (
 		49, 50, 51, 52, 53, 54, 55, 56,
 		57, -1, -1, -1, -1, -1}
 )
+
+func ByteSlice2String(bs []byte) string {
+	return *(*string)(unsafe.Pointer(&bs))
+}
 
 func Encode(bin []byte) string {
 	size := len(bin)
@@ -74,7 +81,7 @@ func Encode(bin []byte) string {
 		out[i] = alphabetEncode[val[i]]
 	}
 
-	return string(out[:size])
+	return ByteSlice2String(out[:size])
 }
 
 func Decode(str string) ([]byte, error) {
