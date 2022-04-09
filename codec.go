@@ -33,10 +33,14 @@ var (
 		57, -1, -1, -1, -1, -1}
 )
 
-func ByteSlice2String(bs []byte) string {
+// byteSlice2String converts the byte
+// slice into a string without copying.
+func byteSlice2String(bs []byte) string {
 	return *(*string)(unsafe.Pointer(&bs))
 }
 
+// Encode encodes the byte slice
+// into a base58 string.
 func Encode(bin []byte) string {
 	size := len(bin)
 	zcount := 0
@@ -81,9 +85,11 @@ func Encode(bin []byte) string {
 		out[i] = alphabetEncode[val[i]]
 	}
 
-	return ByteSlice2String(out[:size])
+	return byteSlice2String(out[:size])
 }
 
+// Decode decodes the given string from
+// the base58 format into a byte slice.
 func Decode(str string) ([]byte, error) {
 	if len(str) == 0 {
 		return nil, fmt.Errorf("zero length string")
