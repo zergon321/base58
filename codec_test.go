@@ -8,9 +8,10 @@ import (
 )
 
 func BenchmarkEncode(b *testing.B) {
+	id := uuid.New()
+	idBin, _ := id.MarshalBinary()
+
 	for i := 0; i < b.N; i++ {
-		id := uuid.New()
-		idBin, _ := id.MarshalBinary()
 		base58.Encode(idBin)
 	}
 }
