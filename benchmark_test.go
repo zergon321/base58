@@ -42,3 +42,13 @@ func BenchmarkDecodeToBuffer(b *testing.B) {
 		base58.DecodeToBuffer(str, buffer[:])
 	}
 }
+
+func BenchmarkDecodeToBufferWithAux(b *testing.B) {
+	str := "YaUV8Ysvm9EjpT8mmbTbwU"
+
+	for i := 0; i < b.N; i++ {
+		var buffer [34]byte
+		var auxBuffer [6]uint32
+		base58.DecodeToBufferWithAux(str, buffer[:], auxBuffer[:])
+	}
+}

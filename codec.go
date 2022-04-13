@@ -140,6 +140,80 @@ func Encode(bin []byte) string {
 	return byteSlice2String(out[:size])
 }
 
+// DecodeToBufferWithAux acceprts a buffer to save
+// contents and a buffer to save the auxiliary data.
+func DecodeToBufferWithAux(str string, buffer []byte, aux []uint32) (int, int, error) {
+	if len(str) == 0 {
+		return -1, -1, fmt.Errorf("zero length string")
+	}
+
+	zero := alphabetEncode[0]
+	b58sz := len(str)
+	var zcount int
+
+	for i := 0; i < b58sz && str[i] == zero; i++ {
+		zcount++
+	}
+
+	var t, c uint64
+
+	if len(buffer) < 2*((b58sz*406/555)+1) {
+		return -1, -1, fmt.Errorf("insufficient out buffer size")
+	}
+
+	if len(aux) < (b58sz+3)/4 {
+		return -1, -1, fmt.Errorf("insufficient aux buffer size")
+	}
+
+	for _, r := range str {
+		if r > 127 {
+			return -1, -1, fmt.Errorf("high-bit set on invalid digit")
+		}
+
+		if alphabetDecode[r] == -1 {
+			return -1, -1, fmt.Errorf("invalid base58 digit (%q)", r)
+		}
+
+		c = uint64(alphabetDecode[r])
+
+		for j := len(aux) - 1; j >= 0; j-- {
+			t = uint64(aux[j])*58 + c
+			c = t >> 32
+			aux[j] = uint32(t & 0xffffffff)
+		}
+	}
+
+	// initial mask depends on b58sz, on further loops it always starts at 24 bits
+	mask := (uint(b58sz%4) * 8)
+
+	if mask == 0 {
+		mask = 32
+	}
+
+	mask -= 8
+	outLen := 0
+
+	for j := 0; j < len(aux); j++ {
+		for mask < 32 { // loop relies on uint overflow
+			buffer[outLen] = byte(aux[j] >> mask)
+			mask -= 8
+			outLen++
+		}
+
+		mask = 24
+	}
+
+	// find the most significant byte post-decode, if any
+	for msb := zcount; msb < len(buffer); msb++ {
+		if buffer[msb] > 0 {
+			return msb - zcount, outLen, nil
+		}
+	}
+
+	// it's all zeroes
+	return 0, outLen, nil
+}
+
 // DecodeToBuffer decodes the base58 string
 // and writes the result to the pre-allocated buffer.
 func DecodeToBuffer(str string, buffer []byte) (int, int, error) {
